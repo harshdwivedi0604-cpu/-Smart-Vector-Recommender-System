@@ -1,0 +1,1763 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FlixFusion - Premium Streaming Service</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome CDN for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        netflixRed: '#E50914',
+                        netflixDark: '#141414',
+                        netflixGray: '#181818',
+                        netflixLightGray: '#2F2F2F',
+                    },
+                    spacing: {
+                        '72': '18rem',
+                        '80': '20rem',
+                        '96': '24rem',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom Scrollbar for Netflix-like experience */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #141414;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #444;
+        }
+
+        /* Hide scrollbar for carousels but keep functionality */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        /* Card Hover Scale and Preview Overlay */
+        .carousel-card {
+            transition: transform 0.3s cubic-bezier(0.25, 0.8, 0.25, 1), z-index 0.3s ease;
+        }
+        
+        @media (min-width: 768px) {
+            .carousel-card:hover {
+                transform: scale(1.4) translateY(-10px);
+                z-index: 50;
+            }
+            
+            /* Delay the hover preview slightly for smoother browsing */
+            .carousel-card .preview-info {
+                opacity: 0;
+                pointer-events: none;
+                transition: opacity 0.2s ease 0.15s;
+            }
+            
+            .carousel-card:hover .preview-info {
+                opacity: 1;
+                pointer-events: auto;
+            }
+        }
+
+        /* Hero Banner Gradient Overlay */
+        .hero-gradient {
+            background: linear-gradient(to top, #141414 0%, rgba(20, 20, 20, 0.6) 30%, rgba(20, 20, 20, 0) 70%, rgba(20, 20, 20, 0.4) 100%);
+        }
+
+        /* Modal Backdrop Blur */
+        .modal-backdrop {
+            backdrop-filter: blur(8px);
+        }
+
+        /* Aspect ratio helper */
+        .aspect-video-custom {
+            aspect-ratio: 16 / 9;
+        }
+    </style>
+</head>
+<body class="bg-netflixDark text-white font-sans overflow-x-hidden selection:bg-netflixRed selection:text-white">
+
+    <!-- TOP NAVIGATION BAR -->
+    <nav id="navbar" class="fixed top-0 w-full z-50 flex items-center justify-between px-4 md:px-12 py-4 transition-colors duration-500 bg-transparent">
+        <!-- Left Section: Logo & Links -->
+        <div class="flex items-center space-x-4 md:space-x-10">
+            <!-- Logo -->
+            <a href="#" onclick="showCategory('all')" class="text-netflixRed font-extrabold text-2xl md:text-3xl tracking-wider hover:opacity-90 transition duration-300">
+                FLIXFUSION
+            </a>
+            <!-- Nav Links (Desktop) -->
+            <ul class="hidden md:flex space-x-6 text-sm font-medium text-gray-300">
+                <li><a href="#" onclick="showCategory('all')" id="nav-home" class="hover:text-white transition duration-300 text-white font-semibold">Home</a></li>
+                <li><a href="#" onclick="showCategory('tv')" id="nav-tv" class="hover:text-white transition duration-300">TV Shows</a></li>
+                <li><a href="#" onclick="showCategory('movies')" id="nav-movies" class="hover:text-white transition duration-300">Movies</a></li>
+                <li><a href="#" onclick="showCategory('mylist')" id="nav-mylist" class="hover:text-white transition duration-300 flex items-center">My List <span id="mylist-badge" class="ml-1.5 bg-netflixRed text-white text-[10px] px-1.5 py-0.5 rounded-full hidden">0</span></a></li>
+            </ul>
+        </div>
+
+        <!-- Right Section: Search, Profile, Mobile Menu -->
+        <div class="flex items-center space-x-4 md:space-x-6">
+            <!-- Search Bar -->
+            <div class="relative flex items-center">
+                <button id="search-btn" class="text-gray-300 hover:text-white focus:outline-none transition duration-300 p-2">
+                    <i class="fas fa-search text-lg md:text-xl"></i>
+                </button>
+                <input id="search-input" type="text" placeholder="Titles, genres, people..." 
+                    class="w-0 opacity-0 bg-black/80 border border-gray-600 text-white text-sm rounded px-3 py-1.5 focus:outline-none focus:border-white transition-all duration-300 placeholder-gray-500">
+                <button id="search-clear" class="absolute right-3 text-gray-400 hover:text-white hidden">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <!-- Notifications (Mock) -->
+            <div class="relative cursor-pointer group hidden sm:block">
+                <i class="fas fa-bell text-lg md:text-xl text-gray-300 hover:text-white transition duration-300"></i>
+                <span class="absolute -top-1 -right-1 bg-netflixRed text-[9px] font-bold rounded-full w-4 h-4 flex items-center justify-center">3</span>
+                <!-- Dropdown -->
+                <div class="absolute right-0 mt-2 w-72 bg-black/95 border border-netflixLightGray rounded shadow-2xl py-2 hidden group-hover:block z-50">
+                    <div class="px-4 py-2 border-b border-netflixLightGray text-xs text-gray-400 font-semibold">New Releases</div>
+                    <a href="#" class="flex items-center px-4 py-3 hover:bg-netflixLightGray transition duration-200">
+                        <div class="w-12 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded mr-3 flex-shrink-0"></div>
+                        <div>
+                            <p class="text-xs font-bold">New Episode Released</p>
+                            <p class="text-[10px] text-gray-400">Chronicles of Aetheria Season 2</p>
+                        </div>
+                    </a>
+                    <a href="#" class="flex items-center px-4 py-3 hover:bg-netflixLightGray transition duration-200">
+                        <div class="w-12 h-8 bg-gradient-to-br from-red-600 to-orange-600 rounded mr-3 flex-shrink-0"></div>
+                        <div>
+                            <p class="text-xs font-bold">Trending Movie Added</p>
+                            <p class="text-[10px] text-gray-400">Shadow Protocol: Rogue</p>
+                        </div>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Profile Dropdown -->
+            <div class="relative">
+                <button id="profile-btn" class="flex items-center space-x-2 focus:outline-none group">
+                    <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80" 
+                        alt="Profile" class="w-8 h-8 rounded object-cover border border-transparent group-hover:border-white transition duration-300">
+                    <i class="fas fa-caret-down text-xs text-gray-400 group-hover:text-white transition duration-300 hidden sm:inline"></i>
+                </button>
+                <!-- Dropdown Menu -->
+                <div id="profile-dropdown" class="absolute right-0 mt-3 w-48 bg-black/95 border border-netflixLightGray rounded shadow-2xl py-2 hidden z-50">
+                    <div class="px-4 py-2 border-b border-netflixLightGray flex items-center space-x-3">
+                        <img src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80" alt="Profile" class="w-8 h-8 rounded object-cover">
+                        <div>
+                            <p class="text-sm font-semibold">Alex Mercer</p>
+                            <p class="text-[10px] text-netflixRed font-bold">Premium Member</p>
+                        </div>
+                    </div>
+                    <div class="py-1">
+                        <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-netflixLightGray hover:text-white transition duration-200">
+                            <i class="fas fa-user mr-3 text-gray-400 w-4"></i> Account
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-netflixLightGray hover:text-white transition duration-200">
+                            <i class="fas fa-cog mr-3 text-gray-400 w-4"></i> Settings
+                        </a>
+                        <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-netflixLightGray hover:text-white transition duration-200">
+                            <i class="fas fa-question-circle mr-3 text-gray-400 w-4"></i> Help Center
+                        </a>
+                    </div>
+                    <div class="border-t border-netflixLightGray pt-1 mt-1">
+                        <a href="#" class="flex items-center px-4 py-2 text-sm text-gray-300 hover:bg-netflixLightGray hover:text-white transition duration-200">
+                            <i class="fas fa-sign-out-alt mr-3 text-gray-400 w-4"></i> Sign Out
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mobile Menu Button -->
+            <button id="mobile-menu-btn" class="md:hidden text-gray-300 hover:text-white focus:outline-none p-2">
+                <i class="fas fa-bars text-xl"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- MOBILE NAVIGATION DRAWER -->
+    <div id="mobile-drawer" class="fixed inset-0 bg-black/95 z-40 flex flex-col justify-center items-center space-y-8 text-xl font-semibold transition-transform duration-300 translate-x-full md:hidden">
+        <button id="mobile-drawer-close" class="absolute top-6 right-6 text-gray-400 hover:text-white text-2xl focus:outline-none">
+            <i class="fas fa-times"></i>
+        </button>
+        <a href="#" onclick="showCategory('all'); toggleMobileDrawer();" class="hover:text-netflixRed transition duration-300">Home</a>
+        <a href="#" onclick="showCategory('tv'); toggleMobileDrawer();" class="hover:text-netflixRed transition duration-300">TV Shows</a>
+        <a href="#" onclick="showCategory('movies'); toggleMobileDrawer();" class="hover:text-netflixRed transition duration-300">Movies</a>
+        <a href="#" onclick="showCategory('mylist'); toggleMobileDrawer();" class="hover:text-netflixRed transition duration-300">My List</a>
+    </div>
+
+    <!-- SEARCH RESULTS CONTAINER (Hidden by default) -->
+    <div id="search-results-section" class="pt-24 px-4 md:px-12 min-h-screen hidden">
+        <h2 class="text-2xl md:text-3xl font-bold mb-6 text-gray-400">Search Results for: <span id="search-query-text" class="text-white"></span></h2>
+        <div id="search-results-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-6">
+            <!-- Dynamic Search Cards -->
+        </div>
+        <div id="search-no-results" class="flex flex-col items-center justify-center py-20 hidden">
+            <i class="fas fa-search-minus text-6xl text-gray-600 mb-4"></i>
+            <p class="text-xl text-gray-400">No matches found for your search.</p>
+            <p class="text-sm text-gray-500 mt-2">Try different keywords or browse categories.</p>
+        </div>
+    </div>
+
+    <!-- MAIN CONTENT CONTAINER -->
+    <div id="main-content">
+        <!-- HERO BANNER SECTION -->
+        <section id="hero-section" class="relative h-[70vh] md:h-[85vh] lg:h-screen w-full flex items-center overflow-hidden">
+            <!-- Hero Background Image -->
+            <div class="absolute inset-0 w-full h-full">
+                <img id="hero-bg" src="https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1600&h=900&q=80" 
+                    alt="Featured Title" class="w-full h-full object-cover object-center scale-105 transition-all duration-1000">
+                <!-- Gradient Overlay -->
+                <div class="absolute inset-0 hero-gradient"></div>
+            </div>
+
+            <!-- Hero Content -->
+            <div class="relative z-10 px-4 md:px-12 max-w-3xl mt-16 md:mt-0">
+                <!-- Badge / Category -->
+                <div class="flex items-center space-x-2 mb-3">
+                    <span class="bg-netflixRed text-white text-[10px] md:text-xs font-extrabold px-2 py-0.5 rounded tracking-widest uppercase">
+                        <i class="fas fa-crown mr-1"></i> FlixFusion Original
+                    </span>
+                    <span id="hero-type" class="text-xs md:text-sm font-semibold text-gray-300 tracking-wider uppercase">TV Series</span>
+                </div>
+                <!-- Title -->
+                <h1 id="hero-title" class="text-4xl md:text-6xl lg:text-7xl font-extrabold tracking-tight mb-4 drop-shadow-lg leading-tight">
+                    Chronicles of Aetheria
+                </h1>
+                <!-- Meta Info -->
+                <div class="flex items-center space-x-3 mb-4 text-xs md:text-sm font-semibold">
+                    <span id="hero-match" class="text-green-500">98% Match</span>
+                    <span id="hero-year" class="text-gray-300">2026</span>
+                    <span id="hero-rating" class="border border-gray-500 px-1.5 py-0.2 rounded text-[10px] text-gray-300">TV-MA</span>
+                    <span id="hero-duration" class="text-gray-300">3 Seasons</span>
+                    <span class="bg-white/10 px-1.5 py-0.2 rounded text-[10px] text-gray-300">Ultra HD 4K</span>
+                </div>
+                <!-- Description -->
+                <p id="hero-desc" class="text-sm md:text-base lg:text-lg text-gray-200 mb-6 md:mb-8 drop-shadow-md line-clamp-3 md:line-clamp-4 leading-relaxed">
+                    In a world suspended in the clouds, a young cartographer discovers an ancient, forbidden map that reveals a hidden continent below the toxic mist. As empires clash for control of this new frontier, she must assemble a rogue crew to reach the surface first and unlock secrets that could reshape humanity's destiny.
+                </p>
+                <!-- Buttons -->
+                <div class="flex flex-wrap gap-3 md:gap-4">
+                    <button onclick="playHeroVideo()" class="flex items-center justify-center bg-white text-black hover:bg-white/80 transition duration-300 px-6 md:px-8 py-2.5 md:py-3 rounded font-bold text-sm md:text-base shadow-lg">
+                        <i class="fas fa-play mr-2.5 text-lg"></i> Play
+                    </button>
+                    <button id="hero-info-btn" class="flex items-center justify-center bg-gray-500/30 hover:bg-gray-500/50 text-white transition duration-300 px-6 md:px-8 py-2.5 md:py-3 rounded font-bold text-sm md:text-base backdrop-blur-sm">
+                        <i class="fas fa-info-circle mr-2.5 text-lg"></i> More Info
+                    </button>
+                    <!-- Mute Button -->
+                    <button id="hero-mute-btn" onclick="toggleHeroMute()" class="flex items-center justify-center bg-transparent border border-gray-500 hover:bg-white/10 text-white transition duration-300 w-10 md:w-12 h-10 md:h-12 rounded-full">
+                        <i id="hero-mute-icon" class="fas fa-volume-mute text-sm md:text-base"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Age Rating Tag (Right side) -->
+            <div class="absolute right-0 bottom-24 md:bottom-32 bg-netflixLightGray/50 border-l-4 border-gray-400 py-1.5 pl-4 pr-8 text-xs md:text-sm font-semibold backdrop-blur-sm hidden sm:block">
+                TV-MA
+            </div>
+        </section>
+
+        <!-- CAROUSELS CONTAINER -->
+        <section class="relative z-20 pb-24 -mt-12 md:-mt-20 lg:-mt-28 space-y-10 md:space-y-14 pl-4 md:pl-12">
+            
+            <!-- ROW 1: TRENDING NOW -->
+            <div id="row-trending" class="carousel-row group/row relative">
+                <h2 class="text-lg md:text-2xl font-bold mb-3 md:mb-4 text-gray-200 group-hover/row:text-white transition duration-300 pr-4">
+                    Trending Now
+                </h2>
+                <!-- Carousel Wrapper -->
+                <div class="relative flex items-center">
+                    <!-- Left Arrow -->
+                    <button onclick="scrollCarousel('carousel-trending', 'left')" 
+                        class="absolute left-0 z-40 bg-black/50 hover:bg-black/80 text-white h-full w-10 md:w-12 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity duration-300 focus:outline-none rounded-r">
+                        <i class="fas fa-chevron-left text-xl md:text-2xl"></i>
+                    </button>
+                    <!-- Cards Container -->
+                    <div id="carousel-trending" class="flex space-x-4 overflow-x-auto no-scrollbar py-4 pr-12 scroll-smooth touch-pan-x w-full">
+                        <!-- Dynamic Cards -->
+                    </div>
+                    <!-- Right Arrow -->
+                    <button onclick="scrollCarousel('carousel-trending', 'right')" 
+                        class="absolute right-0 z-40 bg-black/50 hover:bg-black/80 text-white h-full w-10 md:w-12 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity duration-300 focus:outline-none rounded-l">
+                        <i class="fas fa-chevron-right text-xl md:text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ROW 2: CONTINUE WATCHING -->
+            <div id="row-continue" class="carousel-row group/row relative">
+                <h2 class="text-lg md:text-2xl font-bold mb-3 md:mb-4 text-gray-200 group-hover/row:text-white transition duration-300 pr-4">
+                    Continue Watching
+                </h2>
+                <div class="relative flex items-center">
+                    <button onclick="scrollCarousel('carousel-continue', 'left')" 
+                        class="absolute left-0 z-40 bg-black/50 hover:bg-black/80 text-white h-full w-10 md:w-12 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity duration-300 focus:outline-none rounded-r">
+                        <i class="fas fa-chevron-left text-xl md:text-2xl"></i>
+                    </button>
+                    <div id="carousel-continue" class="flex space-x-4 overflow-x-auto no-scrollbar py-4 pr-12 scroll-smooth touch-pan-x w-full">
+                        <!-- Dynamic Cards -->
+                    </div>
+                    <button onclick="scrollCarousel('carousel-continue', 'right')" 
+                        class="absolute right-0 z-40 bg-black/50 hover:bg-black/80 text-white h-full w-10 md:w-12 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity duration-300 focus:outline-none rounded-l">
+                        <i class="fas fa-chevron-right text-xl md:text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ROW 3: BECAUSE YOU WATCHED X -->
+            <div id="row-recommended" class="carousel-row group/row relative">
+                <h2 class="text-lg md:text-2xl font-bold mb-3 md:mb-4 text-gray-200 group-hover/row:text-white transition duration-300 pr-4">
+                    Because You Watched <span class="text-netflixRed">Inception</span>
+                </h2>
+                <div class="relative flex items-center">
+                    <button onclick="scrollCarousel('carousel-recommended', 'left')" 
+                        class="absolute left-0 z-40 bg-black/50 hover:bg-black/80 text-white h-full w-10 md:w-12 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity duration-300 focus:outline-none rounded-r">
+                        <i class="fas fa-chevron-left text-xl md:text-2xl"></i>
+                    </button>
+                    <div id="carousel-recommended" class="flex space-x-4 overflow-x-auto no-scrollbar py-4 pr-12 scroll-smooth touch-pan-x w-full">
+                        <!-- Dynamic Cards -->
+                    </div>
+                    <button onclick="scrollCarousel('carousel-recommended', 'right')" 
+                        class="absolute right-0 z-40 bg-black/50 hover:bg-black/80 text-white h-full w-10 md:w-12 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity duration-300 focus:outline-none rounded-l">
+                        <i class="fas fa-chevron-right text-xl md:text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ROW 4: MY LIST (Dynamic) -->
+            <div id="row-mylist-container" class="carousel-row group/row relative hidden">
+                <h2 class="text-lg md:text-2xl font-bold mb-3 md:mb-4 text-gray-200 group-hover/row:text-white transition duration-300 pr-4">
+                    My List
+                </h2>
+                <div class="relative flex items-center">
+                    <button onclick="scrollCarousel('carousel-mylist', 'left')" 
+                        class="absolute left-0 z-40 bg-black/50 hover:bg-black/80 text-white h-full w-10 md:w-12 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity duration-300 focus:outline-none rounded-r">
+                        <i class="fas fa-chevron-left text-xl md:text-2xl"></i>
+                    </button>
+                    <div id="carousel-mylist" class="flex space-x-4 overflow-x-auto no-scrollbar py-4 pr-12 scroll-smooth touch-pan-x w-full">
+                        <!-- Dynamic Cards -->
+                    </div>
+                    <button onclick="scrollCarousel('carousel-mylist', 'right')" 
+                        class="absolute right-0 z-40 bg-black/50 hover:bg-black/80 text-white h-full w-10 md:w-12 flex items-center justify-center opacity-0 group-hover/row:opacity-100 transition-opacity duration-300 focus:outline-none rounded-l">
+                        <i class="fas fa-chevron-right text-xl md:text-2xl"></i>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-netflixDark border-t border-netflixLightGray/30 py-12 px-4 md:px-12 text-gray-500 text-sm">
+        <div class="max-w-5xl mx-auto">
+            <!-- Social Icons -->
+            <div class="flex space-x-6 mb-8 text-xl text-gray-400">
+                <a href="#" class="hover:text-white transition duration-300"><i class="fab fa-facebook-f"></i></a>
+                <a href="#" class="hover:text-white transition duration-300"><i class="fab fa-instagram"></i></a>
+                <a href="#" class="hover:text-white transition duration-300"><i class="fab fa-twitter"></i></a>
+                <a href="#" class="hover:text-white transition duration-300"><i class="fab fa-youtube"></i></a>
+            </div>
+            <!-- Footer Links Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-6 mb-8">
+                <ul class="space-y-3">
+                    <li><a href="#" class="hover:underline">Audio Description</a></li>
+                    <li><a href="#" class="hover:underline">Investor Relations</a></li>
+                    <li><a href="#" class="hover:underline">Legal Notices</a></li>
+                </ul>
+                <ul class="space-y-3">
+                    <li><a href="#" class="hover:underline">Help Center</a></li>
+                    <li><a href="#" class="hover:underline">Jobs</a></li>
+                    <li><a href="#" class="hover:underline">Privacy Policy</a></li>
+                </ul>
+                <ul class="space-y-3">
+                    <li><a href="#" class="hover:underline">Gift Cards</a></li>
+                    <li><a href="#" class="hover:underline">Terms of Use</a></li>
+                    <li><a href="#" class="hover:underline">Corporate Information</a></li>
+                </ul>
+                <ul class="space-y-3">
+                    <li><a href="#" class="hover:underline">Media Center</a></li>
+                    <li><a href="#" class="hover:underline">Shop</a></li>
+                    <li><a href="#" class="hover:underline">Contact Us</a></li>
+                </ul>
+            </div>
+            <!-- Service Code Button -->
+            <button class="border border-gray-600 hover:border-white hover:text-white transition duration-300 px-3 py-1.5 text-xs mb-6">
+                Service Code
+            </button>
+            <!-- Copyright -->
+            <p class="text-xs">&copy; 2026 FlixFusion, Inc. Inspired by Netflix. Built for demonstration purposes.</p>
+        </div>
+    </footer>
+
+    <!-- DETAIL MODAL / EXPANDED VIEW -->
+    <div id="detail-modal" class="fixed inset-0 z-50 overflow-y-auto modal-backdrop bg-black/70 flex items-start justify-center pt-10 md:pt-20 px-4 pb-10 hidden">
+        <!-- Modal Container -->
+        <div class="relative bg-netflixGray w-full max-w-4xl rounded-lg overflow-hidden shadow-2xl border border-netflixLightGray/50 transition-all duration-300 scale-95 opacity-0" id="modal-container">
+            
+            <!-- Close Button -->
+            <button onclick="closeModal()" class="absolute top-4 right-4 z-50 bg-black/60 hover:bg-black/90 text-white w-10 h-10 rounded-full flex items-center justify-center focus:outline-none transition duration-300">
+                <i class="fas fa-times text-lg"></i>
+            </button>
+
+            <!-- Modal Banner (16:9) -->
+            <div class="relative aspect-video-custom w-full">
+                <img id="modal-banner-img" src="" alt="Banner" class="w-full h-full object-cover">
+                <!-- Gradient Overlay -->
+                <div class="absolute inset-0 bg-gradient-to-t from-netflixGray via-netflixGray/40 to-transparent"></div>
+                
+                <!-- Banner Content Overlay -->
+                <div class="absolute bottom-6 md:bottom-10 left-6 md:left-12 right-6 md:right-12 flex flex-col items-start">
+                    <h2 id="modal-title" class="text-2xl md:text-4xl lg:text-5xl font-extrabold mb-4 drop-shadow-lg">
+                        Title
+                    </h2>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="playModalVideo()" class="flex items-center justify-center bg-white text-black hover:bg-white/80 transition duration-300 px-6 md:px-8 py-2 md:py-2.5 rounded font-bold text-sm md:text-base shadow-lg">
+                            <i class="fas fa-play mr-2 text-lg"></i> Play
+                        </button>
+                        <button id="modal-add-list-btn" onclick="toggleMyListFromModal()" class="flex items-center justify-center bg-netflixLightGray/60 hover:bg-netflixLightGray/90 text-white transition duration-300 w-10 md:w-11 h-10 md:h-11 rounded-full border border-gray-500">
+                            <i id="modal-list-icon" class="fas fa-plus"></i>
+                        </button>
+                        <button onclick="toggleModalLike()" class="flex items-center justify-center bg-netflixLightGray/60 hover:bg-netflixLightGray/90 text-white transition duration-300 w-10 md:w-11 h-10 md:h-11 rounded-full border border-gray-500">
+                            <i id="modal-like-icon" class="far fa-thumbs-up"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Modal Content Grid -->
+            <div class="p-6 md:p-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Left Column: Info & Tabs -->
+                <div class="md:col-span-2 space-y-6">
+                    <!-- Meta Info Row -->
+                    <div class="flex items-center space-x-3 text-sm font-semibold">
+                        <span id="modal-match" class="text-green-500">98% Match</span>
+                        <span id="modal-year" class="text-gray-300">2026</span>
+                        <span id="modal-rating" class="border border-gray-500 px-1.5 py-0.2 rounded text-[10px] text-gray-300">TV-MA</span>
+                        <span id="modal-duration" class="text-gray-300">3 Seasons</span>
+                        <span class="bg-white/10 px-1.5 py-0.2 rounded text-[10px] text-gray-300">HD</span>
+                    </div>
+
+                    <!-- Description -->
+                    <p id="modal-desc" class="text-gray-200 text-sm md:text-base leading-relaxed">
+                        Description goes here.
+                    </p>
+
+                    <!-- Tabs Navigation -->
+                    <div class="border-b border-netflixLightGray flex space-x-6 text-sm font-semibold">
+                        <button id="tab-episodes-btn" onclick="switchModalTab('episodes')" class="pb-3 border-b-2 border-netflixRed text-white focus:outline-none">Episodes</button>
+                        <button id="tab-similar-btn" onclick="switchModalTab('similar')" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white focus:outline-none">More Like This</button>
+                        <button id="tab-about-btn" onclick="switchModalTab('about')" class="pb-3 border-b-2 border-transparent text-gray-400 hover:text-white focus:outline-none">About</button>
+                    </div>
+
+                    <!-- Tab Content: Episodes -->
+                    <div id="tab-episodes" class="space-y-4">
+                        <!-- Season Selector -->
+                        <div class="flex items-center justify-between">
+                            <select id="season-selector" class="bg-netflixLightGray border border-gray-600 text-white text-sm rounded px-3 py-1.5 focus:outline-none focus:border-white">
+                                <option value="1">Season 1</option>
+                                <option value="2">Season 2</option>
+                                <option value="3">Season 3</option>
+                            </select>
+                            <span class="text-xs text-gray-400 font-semibold" id="episodes-count">10 Episodes</span>
+                        </div>
+                        <!-- Episodes List -->
+                        <div id="episodes-list" class="space-y-4 divide-y divide-netflixLightGray/50">
+                            <!-- Dynamic Episodes -->
+                        </div>
+                    </div>
+
+                    <!-- Tab Content: More Like This -->
+                    <div id="tab-similar" class="grid grid-cols-2 sm:grid-cols-3 gap-4 hidden">
+                        <!-- Dynamic Similar Cards -->
+                    </div>
+
+                    <!-- Tab Content: About -->
+                    <div id="tab-about" class="space-y-4 text-sm text-gray-300 hidden">
+                        <div>
+                            <span class="text-gray-500 font-semibold">Director:</span>
+                            <span id="modal-about-director" class="hover:underline cursor-pointer">Jane Doe</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 font-semibold">Cast:</span>
+                            <span id="modal-about-cast" class="hover:underline cursor-pointer">Actor A, Actor B, Actor C</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 font-semibold">Writer:</span>
+                            <span id="modal-about-writer" class="hover:underline cursor-pointer">Writer X, Writer Y</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 font-semibold">Genres:</span>
+                            <span id="modal-about-genres" class="hover:underline cursor-pointer">Sci-Fi, Action, Drama</span>
+                        </div>
+                        <div>
+                            <span class="text-gray-500 font-semibold">Maturity Rating:</span>
+                            <span id="modal-about-rating" class="border border-gray-500 px-1.5 py-0.2 rounded text-[10px] text-gray-300 ml-1">TV-MA</span>
+                            <span class="ml-2 text-xs text-gray-400">Recommended for mature audiences.</span>
+                        </div>
+                    </div>
+
+                </div>
+
+                <!-- Right Column: Cast & Metadata (Desktop Sidebar) -->
+                <div class="space-y-4 text-sm">
+                    <div>
+                        <span class="text-gray-500 font-semibold">Cast:</span>
+                        <p id="modal-sidebar-cast" class="text-gray-300 mt-1">Actor A, Actor B, Actor C, and more</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 font-semibold">Genres:</span>
+                        <p id="modal-sidebar-genres" class="text-gray-300 mt-1">Sci-Fi, Action, Drama</p>
+                    </div>
+                    <div>
+                        <span class="text-gray-500 font-semibold">This show is:</span>
+                        <p id="modal-sidebar-tags" class="text-gray-300 mt-1">Suspenseful, Mind-bending, Exciting</p>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MOCK VIDEO PLAYER OVERLAY -->
+    <div id="video-player" class="fixed inset-0 z-50 bg-black flex flex-col justify-between hidden">
+        <!-- Top Bar -->
+        <div class="p-4 md:p-6 flex items-center justify-between bg-gradient-to-b from-black/80 to-transparent z-10">
+            <button onclick="closeVideoPlayer()" class="text-white hover:text-gray-300 text-xl md:text-2xl flex items-center space-x-3 focus:outline-none">
+                <i class="fas fa-arrow-left"></i>
+                <span class="text-sm md:text-base font-semibold" id="player-title">Playing: Chronicles of Aetheria</span>
+            </button>
+            <span class="text-xs md:text-sm text-gray-400 font-semibold bg-black/40 px-3 py-1 rounded-full">Mock Player</span>
+        </div>
+
+        <!-- Video Canvas / Placeholder -->
+        <div class="absolute inset-0 flex items-center justify-center overflow-hidden">
+            <!-- Animated Canvas for a beautiful abstract visualizer that looks like a movie/trailer -->
+            <canvas id="player-canvas" class="w-full h-full object-cover"></canvas>
+            
+            <!-- Play/Pause Overlay Indicator -->
+            <div id="player-overlay-play" class="absolute bg-black/50 w-20 h-20 rounded-full flex items-center justify-center opacity-0 transition-opacity duration-300 pointer-events-none">
+                <i class="fas fa-play text-3xl text-white ml-1"></i>
+            </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="p-4 md:p-8 bg-gradient-to-t from-black/90 via-black/50 to-transparent z-10 space-y-4">
+            <!-- Progress Bar -->
+            <div class="flex items-center space-x-4">
+                <span class="text-xs text-gray-400" id="player-time-current">0:00</span>
+                <div class="relative flex-1 h-1.5 bg-gray-600 rounded-full cursor-pointer group" id="player-progress-container">
+                    <div class="absolute top-0 left-0 h-full bg-netflixRed rounded-full w-0" id="player-progress-bar"></div>
+                    <div class="absolute top-1/2 -translate-y-1/2 w-3.5 h-3.5 bg-netflixRed rounded-full shadow opacity-0 group-hover:opacity-100 transition-opacity duration-200" id="player-progress-handle" style="left: 0%;"></div>
+                </div>
+                <span class="text-xs text-gray-400" id="player-time-total">2:15</span>
+            </div>
+
+            <!-- Control Buttons -->
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-6">
+                    <!-- Play/Pause -->
+                    <button onclick="togglePlayerPlay()" class="text-white hover:text-gray-300 text-xl md:text-2xl focus:outline-none">
+                        <i id="player-play-icon" class="fas fa-pause"></i>
+                    </button>
+                    <!-- Rewind 10s -->
+                    <button onclick="playerRewind()" class="text-white hover:text-gray-300 text-lg md:text-xl focus:outline-none">
+                        <i class="fas fa-backward"></i> <span class="text-xs font-bold ml-1">10s</span>
+                    </button>
+                    <!-- Forward 10s -->
+                    <button onclick="playerForward()" class="text-white hover:text-gray-300 text-lg md:text-xl focus:outline-none">
+                        <i class="fas fa-forward"></i> <span class="text-xs font-bold ml-1">10s</span>
+                    </button>
+                    <!-- Volume -->
+                    <div class="flex items-center space-x-2 group/volume">
+                        <button onclick="togglePlayerMute()" class="text-white hover:text-gray-300 text-lg md:text-xl focus:outline-none">
+                            <i id="player-volume-icon" class="fas fa-volume-up"></i>
+                        </button>
+                        <input type="range" min="0" max="100" value="80" id="player-volume-slider" 
+                            class="w-0 group-hover/volume:w-20 transition-all duration-300 h-1 bg-gray-600 rounded-lg appearance-none cursor-pointer accent-netflixRed">
+                    </div>
+                </div>
+
+                <div class="flex items-center space-x-6">
+                    <!-- Speed Selector -->
+                    <select id="player-speed" class="bg-transparent text-white text-xs md:text-sm font-semibold focus:outline-none cursor-pointer">
+                        <option value="0.5" class="bg-netflixGray">0.5x</option>
+                        <option value="1.0" class="bg-netflixGray" selected>1.0x</option>
+                        <option value="1.5" class="bg-netflixGray">1.5x</option>
+                        <option value="2.0" class="bg-netflixGray">2.0x</option>
+                    </select>
+                    <!-- Fullscreen -->
+                    <button onclick="togglePlayerFullscreen()" class="text-white hover:text-gray-300 text-lg md:text-xl focus:outline-none">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- JAVASCRIPT LOGIC -->
+    <script>
+        // ==========================================
+        // MOCK DATA FOR MOVIES & TV SHOWS
+        // ==========================================
+        const mediaData = [
+            {
+                id: "aetheria",
+                title: "Chronicles of Aetheria",
+                type: "tv",
+                category: "trending",
+                backdrop: "https://images.unsplash.com/photo-1579783900882-c0d3dad7b119?auto=format&fit=crop&w=1200&h=675&q=80",
+                poster: "https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=400&h=600&q=80",
+                match: "98% Match",
+                rating: "TV-MA",
+                year: "2026",
+                duration: "3 Seasons",
+                genres: ["Sci-Fi", "Action", "Drama"],
+                tags: ["Suspenseful", "Mind-bending", "Exciting"],
+                desc: "In a world suspended in the clouds, a young cartographer discovers an ancient, forbidden map that reveals a hidden continent below the toxic mist. As empires clash for control of this new frontier, she must assemble a rogue crew to reach the surface first and unlock secrets that could reshape humanity's destiny.",
+                director: "Elena Rostova",
+                writer: "Marcus Vance",
+                cast: "Sophia Lin, David Vance, Arthur Pendelton",
+                episodes: [
+                    { title: "The Cloud Cartographer", desc: "Aria discovers a hidden map in the archives of the Sky Citadel, sparking a dangerous quest.", duration: "48m", thumb: "https://images.unsplash.com/photo-1501854140801-50d01698950b?auto=format&fit=crop&w=300&h=170&q=80" },
+                    { title: "Below the Mist", desc: "The crew takes their first dive into the toxic clouds, encountering unexpected atmospheric anomalies.", duration: "52m", thumb: "https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?auto=format&fit=crop&w=300&h=170&q=80" },
+                    { title: "The Iron Fleet", desc: "Emperor Kaelen's dreadnoughts intercept the crew, leading to a high-stakes aerial dogfight.", duration: "45m", thumb: "https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?auto=format&fit=crop&w=300&h=170&q=80" },
+                    { title: "First Contact", desc: "Landing on the surface, the crew makes a shocking discovery about the planet's history.", duration: "55m", thumb: "https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=300&h=170&q=80" }
+                ]
+            },
+            {
+                id: "shadow-protocol",
+                title: "Shadow Protocol: Rogue",
+                type: "movie",
+                category: "trending",
+                backdrop: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?auto=format&fit=crop&w=1200&h=675&q=80",
+                poster: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=400&h=600&q=80",
+                match: "95% Match",
+                rating: "R",
+                year: "2025",
+                duration: "2h 14m",
+                genres: ["Action", "Thriller"],
+                tags: ["Adrenaline-rush", "Gritty", "Fast-paced"],
+                desc: "When a black-ops agent is framed for a global cyber-terror attack, he goes rogue to hunt down the real conspirators within his own agency. Armed with classified tech and lethal skills, he initiates a one-man war across European capitals.",
+                director: "Christian Bale",
+                writer: "Sarah Connor",
+                cast: "Liam Neeson, Zoe Saldana, Idris Elba",
+                episodes: []
+            },
+            {
+                id: "neon-dreams",
+                title: "Neon Dreams: Tokyo",
+                type: "tv",
+                category: "trending",
+                backdrop: "https://images.unsplash.com/photo-1540959733332-eab4deceeaf7?auto=format&fit=crop&w=1200&h=675&q=80",
+                poster: "https://images.unsplash.com/photo-1508700115892-45ecd05ae2ad?auto=format&fit=crop&w=400&h=600&q=80",
+                match: "92% Match",
+                rating: "TV-14",
+                year: "2026",
+                duration: "1 Season",
+                genres: ["Drama", "Sci-Fi", "Music"],
+                tags: ["Visually striking", "Emotional", "Atmospheric"],
+                desc: "In a neon-drenched, near-future Tokyo, an underground synth-wave DJ and a cybernetic street artist team up to expose a mega-corporation that is harvesting citizens' dreams to fuel a virtual reality drug.",
+                director: "Kenji Sato",
+                writer: "Yuki Tanaka",
+                cast: "Kento Yamazaki, Hikari Mitsushima, Ryo Kase",
+                episodes: [
+                    { title: "Beat 1: Resonance", desc: "Ren's music accidentally triggers a glitch in a corporate neural implant, revealing a dark secret.", duration: "42m", thumb: "https://images.unsplash.com/photo-1514525253161-7a46d19cd819?auto=format&fit=crop&w=300&h=170&q=80" },
+                    { title: "Beat 2: Glitch Art", desc: "Mei paints a mural containing encrypted corporate data, making her a target for corporate hitmen.", duration: "46m", thumb: "https://images.unsplash.com/photo-1511671782779-c97d3d27a1d4?auto=format&fit=crop&w=300&h=170&q=80" },
+                    { title: "Beat 3: The Dream Grid", desc: "Together, they infiltrate a high-society virtual reality club to steal the source code.", duration: "50m", thumb: "https://images.unsplash.com/photo-1518495973542-4542c06a5843?auto=format&fit=crop&w=300&h=170&q=80" }
+                ]
+            },
+            {
+                id: "apex-predator",
+                title: "Apex Predator",
+                type: "movie",
+                category: "trending",
+                backdrop: "https://images.unsplash.com/photo-1535083783855-76ae62b2914e?auto=format&fit=crop&w=1200&h=675&q=80",
+                poster: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&w=400&h=600&q=80",
+                match: "89% Match",
+                rating: "PG-13",
+                year: "2025",
+                duration: "1h 58m",
+                genres: ["Thriller", "Adventure"],
+                tags: ["Suspenseful", "Scary", "Exciting"],
+                desc: "A marine biologist researching deep-sea trenches in the Pacific discovers a prehistoric apex predator thought to be extinct. When their research vessel is damaged, the crew is trapped in a deadly game of cat and mouse in pitch-black waters.",
+                director: "James Cameron",
+                writer: "Peter Benchley",
+                cast: "Jason Statham, Jessica Chastain, Yahya Abdul-Mateen II",
+                episodes: []
+            },
+            {
+                id: "quantum-paradox",
+                title: "The Quantum Paradox",
+                type: "movie",
+                category: "trending",
+                backdrop: "https://images.unsplash.com/photo-1462331940025-496dfbfc7564?auto=format&fit=crop&w=1200&h=675&q=80",
+                poster: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=400&h=600&q=80",
+                match: "97% Match",
+                rating: "PG-13",
+                year: "2026",
+                duration: "2h 30m",
+                genres: ["Sci-Fi", "Mystery", "Thriller"],
+                tags: ["Mind-bending", "Cerebral", "Epic"],
+                desc: "A team of physicists working on a particle accelerator accidentally tears a rift in the space-time continuum, causing multiple timelines to bleed into each other. They must close the rift before their own reality is completely overwritten.",
+                director: "Christopher Nolan",
+                writer: "Jonathan Nolan",
+                cast: "Cillian Murphy, Emily Blunt, Robert Downey Jr.",
+                episodes: []
+            },
+            {
+                id: "silent-abyss",
+                title: "Silent Abyss",
+                type: "movie",
+                category: "continue",
+                backdrop: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&h=675&q=80",
+                poster: "https://images.unsplash.com/photo-1500485035595-cbe6f645feb1?auto=format&fit=crop&w=400&h=600&q=80",
+                match: "94% Match",
+                rating: "PG-13",
+                year: "2024",
+                duration: "2h 5m",
+                genres: ["Drama", "Mystery"],
+                tags: ["Emotional", "Understated", "Beautiful"],
+                desc: "An isolated lighthouse keeper on a remote island begins to receive mysterious, poetic radio transmissions from an unknown source. As he decodes the messages, he uncovers a decades-old maritime mystery that hits close to home.",
+                director: "Robert Eggers",
+                writer: "Max Eggers",
+                cast: "Willem Dafoe, Robert Pattinson",
+                episodes: [],
+                progress: 65 // Continue watching progress %
+            },
+            {
+                id: "cyber-city",
+                title: "Cyber City: Outlaws",
+                type: "tv",
+                category: "continue",
+                backdrop: "https://images.unsplash.com/photo-1515621061946-eff1c2a352bd?auto=format&fit=crop&w=1200&h=675&q=80",
+                poster: "https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?auto=format&fit=crop&w=400&h=600&q=80",
+                match: "91% Match",
+                rating: "TV-MA",
+                year: "2025",
+                duration: "2 Seasons",
+                genres: ["Sci-Fi", "Action", "Crime"],
+                tags: ["Gritty", "Violent", "Exciting"],
+                desc: "In a dystopian metropolis ruled by corporate syndicates, a street-smart hacker and a disgraced cyber-cop form an uneasy alliance to pull off the ultimate heist: stealing a digital consciousness containing the secrets of the city's elite.",
+                director: "Lana Wachowski",
+                writer: "Lilly Wachowski",
+                cast: "Keanu Reeves, Carrie-Anne Moss, Yahya Abdul-Mateen II",
+                episodes: [
+                    { title: "The Neon Heist", desc: "Jax and Vira plan a daring break-in at the Arasaka data vault.", duration: "44m", thumb: "https://images.unsplash.com/photo-1515621061946-eff1c2a352bd?auto=format&fit=crop&w=300&h=170&q=80" },
+                    { title: "Double Cross", desc: "A trusted ally betrays the crew, leading to a deadly chase through the lower sectors.", duration: "48m", thumb: "https://images.unsplash.com/photo-1578301978693-85fa9c0320b9?auto=format&fit=crop&w=300&h=170&q=80" }
+                ],
+                progress: 40
+            },
+            {
+                id: "culinary-quest",
+                title: "The Culinary Quest",
+                type: "tv",
+                category: "continue",
+                backdrop: "https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&w=1200&h=675&q=80",
+                poster: "https://images.unsplash.com/photo-1556911220-e15b29be8c8f?auto=format&fit=crop&w=400&h=600&q=80",
+                match: "88% Match",
+                rating: "TV-G",
+                year: "2025",
+                duration: "4 Seasons",
+                genres: ["Documentary", "Food"],
+                tags: ["Inspiring", "Feel-good", "Relaxing"],
+                desc: "Renowned chef Marcus Samuelsson travels the globe to explore the intersection of culture, history, and cuisine, uncovering the stories behind the world's most iconic street foods and fine dining masterpieces.",
+                director: "David Gelb",
+                writer: "David Gelb",
+                cast: "Marcus Samuelsson",
+                episodes: [
+                    { title: "Oaxaca: Land of the Seven Moles", desc: "Marcus explores the rich culinary heritage of Oaxaca, Mexico, learning the secrets of traditional mole.", duration: "32m", thumb: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?auto=format&fit=crop&w=300&h=170&q=80" },
+                    { title: "Hokkaido: Winter Comforts", desc: "In the snowy north of Japan, Marcus discovers the art of perfect ramen and fresh seafood.", duration: "35m", thumb: "https://images.unsplash.com/photo-1569718212165-3a8278d5f624?auto=format&fit=crop&w=300&h=170&q=80" }
+                ],
+                progress: 85
+            },
+            {
+                id: "echoes-of-time",
+                title: "Echoes of Time",
+                type: "movie",
+                category: "recommended", // Because you watched Inception
+                backdrop: "https://images.unsplash.com/photo-1461360370896-922624d12aa1?auto=format&fit=crop&w=1200&h=675&q=80",
+                poster: "https://images.unsplash.com/photo-1478760329108-5c3ed9d495a0?auto=format&fit=crop&w=400&h=600&q=80",
+                match: "96% Match",
+                rating: "PG-13",
+                year: "2024",
+                duration: "2h 8m",
+                genres: ["Sci-Fi", "Drama", "Romance"],
+                tags: ["Mind-bending", "Romantic", "Bittersweet"],
+                desc: "An antique watchmaker discovers that one of his pocket watches can rewind time by exactly five minutes. He uses it to prevent minor accidents and win the heart of a regular customer, but soon realizes that altering time has compounding, catastrophic consequences.",
+                director: "Richard Curtis",
+                writer: "Richard Curtis",
+                cast: "Domhnall Gleeson, Rachel McAdams, Bill Nighy",
+                episodes: []
+            },
+            {
+                id: "mind-maze",
+                title: "The Mind Maze",
+                type: "movie",
+                category: "recommended", // Because you watched Inception
+                backdrop: "https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&h=675&q=80",
+                poster: "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=400&h=600&q=80",
+                match: "94% Match",
+                rating: "R",
+                year: "2025",
+                duration: "2h 18m",
+                genres: ["Thriller", "Mystery"],
+                tags: ["Mind-bending", "Suspenseful", "Dark"],
+                desc: "A detective specializing in psychological profiling is hired to enter the subconscious mind of a comatose serial killer to find the location of his final, hidden victim. Inside, he must navigate a surreal, shifting labyrinth of the killer's memories and nightmares.",
+                director: "Tarsem Singh",
+                writer: "Mark Protosevich",
+                cast: "Jennifer Lopez, Vince D'Onofrio, Jake Gyllenhaal",
+                episodes: []
+            },
+            {
+                id: "parallel-lines",
+                title: "Parallel Lines",
+                type: "tv",
+                category: "recommended", // Because you watched Inception
+                backdrop: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=1200&h=675&q=80",
+                poster: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=400&h=600&q=80",
+                match: "93% Match",
+                rating: "TV-MA",
+                year: "2026",
+                duration: "2 Seasons",
+                genres: ["Sci-Fi", "Thriller", "Drama"],
+                tags: ["Mind-bending", "Suspenseful", "Cerebral"],
+                desc: "A woman discovers a portal in her basement that leads to an alternate version of her life where she made different choices. As she begins to swap places with her alternate self, she realizes that someone is hunting down all versions of her across the multiverse.",
+                director: "Denis Villeneuve",
+                writer: "Taylor Sheridan",
+                cast: "Amy Adams, Jeremy Renner, Forest Whitaker",
+                episodes: [
+                    { title: "The Fork in the Road", desc: "Helen discovers the portal and meets a version of herself who chose a different career.", duration: "50m", thumb: "https://images.unsplash.com/photo-1451187580459-43490279c0fa?auto=format&fit=crop&w=300&h=170&q=80" },
+                    { title: "The Swap", desc: "Helen decides to spend a week in the alternate timeline, but returning proves harder than expected.", duration: "53m", thumb: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?auto=format&fit=crop&w=300&h=170&q=80" }
+                ]
+            },
+            {
+                id: "cosmic-odyssey",
+                title: "Cosmic Odyssey",
+                type: "movie",
+                category: "recommended", // Because you watched Inception
+                backdrop: "https://images.unsplash.com/photo-1446776811953-b23d57bd21aa?auto=format&fit=crop&w=1200&h=675&q=80",
+                poster: "https://images.unsplash.com/photo-1454789548928-9efd52dc4031?auto=format&fit=crop&w=400&h=600&q=80",
+                match: "91% Match",
+                rating: "PG",
+                year: "2025",
+                duration: "2h 45m",
+                genres: ["Sci-Fi", "Adventure"],
+                tags: ["Epic", "Visually striking", "Inspiring"],
+                desc: "In the late 21st century, a crew of international astronauts embarks on a voyage to a newly discovered wormhole near Saturn, hoping to find a habitable planet to save a dying Earth. Their journey tests the limits of human endurance and physics.",
+                director: "Alfonso Cuarón",
+                writer: "Alfonso Cuarón",
+                cast: "Sandra Bullock, George Clooney",
+                episodes: []
+            }
+        ];
+
+        // State Management
+        let myList = JSON.parse(localStorage.getItem('flixfusion_mylist')) || [];
+        let currentCategory = 'all'; // 'all', 'tv', 'movies', 'mylist'
+        let activeModalMedia = null;
+        let isHeroMuted = true;
+        let isPlayerPlaying = false;
+        let playerInterval = null;
+        let playerTime = 0;
+        let playerDuration = 135; // 2m 15s mock trailer duration
+
+        // DOM Elements
+        const navbar = document.getElementById('navbar');
+        const searchBtn = document.getElementById('search-btn');
+        const searchInput = document.getElementById('search-input');
+        const searchClear = document.getElementById('search-clear');
+        const searchResultsSection = document.getElementById('search-results-section');
+        const searchResultsGrid = document.getElementById('search-results-grid');
+        const searchNoResults = document.getElementById('search-no-results');
+        const searchQueryText = document.getElementById('search-query-text');
+        const mainContent = document.getElementById('main-content');
+        const profileBtn = document.getElementById('profile-btn');
+        const profileDropdown = document.getElementById('profile-dropdown');
+        const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+        const mobileDrawer = document.getElementById('mobile-drawer');
+        const mobileDrawerClose = document.getElementById('mobile-drawer-close');
+        const mylistBadge = document.getElementById('mylist-badge');
+
+        // ==========================================
+        // INITIALIZATION & EVENT LISTENERS
+        // ==========================================
+        window.addEventListener('DOMContentLoaded', () => {
+            renderCarousels();
+            updateMyListBadge();
+            setupHeroBanner();
+            
+            // Scroll Listener for Navbar
+            window.addEventListener('scroll', () => {
+                if (window.scrollY > 50) {
+                    navbar.classList.remove('bg-transparent');
+                    navbar.classList.add('bg-black', 'shadow-lg');
+                } else {
+                    navbar.classList.remove('bg-black', 'shadow-lg');
+                    navbar.classList.add('bg-transparent');
+                }
+            });
+
+            // Search Input Toggle
+            searchBtn.addEventListener('click', () => {
+                searchInput.classList.toggle('w-0');
+                searchInput.classList.toggle('w-48');
+                searchInput.classList.toggle('md:w-64');
+                searchInput.classList.toggle('opacity-0');
+                searchInput.classList.toggle('px-3');
+                if (!searchInput.classList.contains('w-0')) {
+                    searchInput.focus();
+                }
+            });
+
+            // Search Input Event
+            searchInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim().toLowerCase();
+                if (query.length > 0) {
+                    searchClear.classList.remove('hidden');
+                    performSearch(query);
+                } else {
+                    searchClear.classList.add('hidden');
+                    clearSearch();
+                }
+            });
+
+            // Clear Search
+            searchClear.addEventListener('click', () => {
+                searchInput.value = '';
+                searchClear.classList.add('hidden');
+                clearSearch();
+                searchInput.focus();
+            });
+
+            // Profile Dropdown Toggle
+            profileBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                profileDropdown.classList.toggle('hidden');
+            });
+
+            document.addEventListener('click', () => {
+                profileDropdown.classList.add('hidden');
+            });
+
+            // Mobile Menu Toggle
+            mobileMenuBtn.addEventListener('click', toggleMobileDrawer);
+            mobileDrawerClose.addEventListener('click', toggleMobileDrawer);
+
+            // Hero Info Button
+            document.getElementById('hero-info-btn').addEventListener('click', () => {
+                openModal('aetheria');
+            });
+
+            // Close Modal on Backdrop Click
+            document.getElementById('detail-modal').addEventListener('click', (e) => {
+                if (e.target === document.getElementById('detail-modal')) {
+                    closeModal();
+                }
+            });
+
+            // ESC Key to Close Modal & Video Player
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    closeModal();
+                    closeVideoPlayer();
+                }
+            });
+        });
+
+        // ==========================================
+        // NAVIGATION & FILTERING
+        // ==========================================
+        function toggleMobileDrawer() {
+            mobileDrawer.classList.toggle('translate-x-full');
+        }
+
+        function showCategory(category) {
+            currentCategory = category;
+            
+            // Update Nav Active States
+            const navs = ['nav-home', 'nav-tv', 'nav-movies', 'nav-mylist'];
+            navs.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) {
+                    el.classList.remove('text-white', 'font-semibold');
+                    el.classList.add('text-gray-300');
+                }
+            });
+
+            const activeNav = document.getElementById(`nav-${category === 'all' ? 'home' : category}`);
+            if (activeNav) {
+                activeNav.classList.add('text-white', 'font-semibold');
+                activeNav.classList.remove('text-gray-300');
+            }
+
+            // Clear Search if active
+            searchInput.value = '';
+            searchClear.classList.add('hidden');
+            clearSearch();
+
+            // Filter Rows
+            const rowTrending = document.getElementById('row-trending');
+            const rowContinue = document.getElementById('row-continue');
+            const rowRecommended = document.getElementById('row-recommended');
+            const rowMyList = document.getElementById('row-mylist-container');
+
+            if (category === 'all') {
+                rowTrending.classList.remove('hidden');
+                rowContinue.classList.remove('hidden');
+                rowRecommended.classList.remove('hidden');
+                if (myList.length > 0) rowMyList.classList.remove('hidden');
+                document.getElementById('hero-section').classList.remove('hidden');
+            } else if (category === 'tv') {
+                rowTrending.classList.remove('hidden');
+                rowContinue.classList.remove('hidden');
+                rowRecommended.classList.remove('hidden');
+                rowMyList.classList.add('hidden');
+                document.getElementById('hero-section').classList.remove('hidden');
+                // Re-render rows with TV only
+                renderCarousels('tv');
+            } else if (category === 'movies') {
+                rowTrending.classList.remove('hidden');
+                rowContinue.classList.remove('hidden');
+                rowRecommended.classList.remove('hidden');
+                rowMyList.classList.add('hidden');
+                document.getElementById('hero-section').classList.remove('hidden');
+                // Re-render rows with Movies only
+                renderCarousels('movie');
+            } else if (category === 'mylist') {
+                rowTrending.classList.add('hidden');
+                rowContinue.classList.add('hidden');
+                rowRecommended.classList.add('hidden');
+                rowMyList.classList.remove('hidden');
+                document.getElementById('hero-section').classList.add('hidden');
+                renderCarousels();
+            }
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ==========================================
+        // HERO BANNER SETUP
+        // ==========================================
+        function setupHeroBanner() {
+            const hero = mediaData.find(m => m.id === 'aetheria');
+            if (hero) {
+                document.getElementById('hero-bg').src = hero.backdrop;
+                document.getElementById('hero-title').innerText = hero.title;
+                document.getElementById('hero-desc').innerText = hero.desc;
+                document.getElementById('hero-match').innerText = hero.match;
+                document.getElementById('hero-year').innerText = hero.year;
+                document.getElementById('hero-rating').innerText = hero.rating;
+                document.getElementById('hero-duration').innerText = hero.duration;
+                document.getElementById('hero-type').innerText = hero.type === 'tv' ? 'TV Series' : 'Movie';
+            }
+        }
+
+        function toggleHeroMute() {
+            isHeroMuted = !isHeroMuted;
+            const icon = document.getElementById('hero-mute-icon');
+            if (isHeroMuted) {
+                icon.className = 'fas fa-volume-mute text-sm md:text-base';
+            } else {
+                icon.className = 'fas fa-volume-up text-sm md:text-base';
+            }
+        }
+
+        // ==========================================
+        // CAROUSEL RENDERING & SCROLLING
+        // ==========================================
+        function renderCarousels(filterType = null) {
+            const trendingContainer = document.getElementById('carousel-trending');
+            const continueContainer = document.getElementById('carousel-continue');
+            const recommendedContainer = document.getElementById('carousel-recommended');
+            const mylistContainer = document.getElementById('carousel-mylist');
+
+            // Clear containers
+            trendingContainer.innerHTML = '';
+            continueContainer.innerHTML = '';
+            recommendedContainer.innerHTML = '';
+            mylistContainer.innerHTML = '';
+
+            // Filter data based on type (TV/Movie)
+            const filteredData = filterType ? mediaData.filter(m => m.type === filterType) : mediaData;
+
+            filteredData.forEach(media => {
+                const cardHTML = createCardHTML(media);
+                
+                if (media.category === 'trending') {
+                    trendingContainer.innerHTML += cardHTML;
+                } else if (media.category === 'continue') {
+                    continueContainer.innerHTML += cardHTML;
+                } else if (media.category === 'recommended') {
+                    recommendedContainer.innerHTML += cardHTML;
+                }
+            });
+
+            // Render My List
+            const mylistRowContainer = document.getElementById('row-mylist-container');
+            if (myList.length > 0) {
+                if (currentCategory === 'all' || currentCategory === 'mylist') {
+                    mylistRowContainer.classList.remove('hidden');
+                }
+                myList.forEach(id => {
+                    const media = mediaData.find(m => m.id === id);
+                    if (media) {
+                        mylistContainer.innerHTML += createCardHTML(media);
+                    }
+                });
+            } else {
+                mylistRowContainer.classList.add('hidden');
+            }
+        }
+
+        function createCardHTML(media) {
+            const isInList = myList.includes(media.id);
+            const listIconClass = isInList ? 'fas fa-check text-green-500' : 'fas fa-plus';
+            const progressHTML = media.progress ? `
+                <div class="absolute bottom-0 left-0 w-full h-1 bg-gray-700">
+                    <div class="bg-netflixRed h-full" style="width: ${media.progress}%"></div>
+                </div>
+            ` : '';
+
+            return `
+                <div class="carousel-card relative flex-shrink-0 w-36 sm:w-44 md:w-52 lg:w-60 bg-netflixGray rounded overflow-hidden cursor-pointer shadow-md" onclick="openModal('${media.id}')">
+                    <!-- Poster Image -->
+                    <div class="aspect-[2/3] w-full relative">
+                        <img src="${media.poster}" alt="${media.title}" class="w-full h-full object-cover rounded-t">
+                        ${progressHTML}
+                    </div>
+                    
+                    <!-- Hover Preview Info (Desktop Only) -->
+                    <div class="preview-info absolute top-full left-0 w-full bg-netflixGray p-3 rounded-b shadow-2xl border-t border-netflixLightGray/50 hidden md:block">
+                        <!-- Action Buttons -->
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-2">
+                                <button onclick="event.stopPropagation(); playVideo('${media.id}')" class="bg-white text-black hover:bg-white/80 w-8 h-8 rounded-full flex items-center justify-center transition duration-200">
+                                    <i class="fas fa-play text-xs ml-0.5"></i>
+                                </button>
+                                <button onclick="event.stopPropagation(); toggleMyList('${media.id}')" class="border border-gray-500 hover:border-white w-8 h-8 rounded-full flex items-center justify-center transition duration-200">
+                                    <i class="${listIconClass} text-xs"></i>
+                                </button>
+                                <button onclick="event.stopPropagation(); toggleLike('${media.id}', this)" class="border border-gray-500 hover:border-white w-8 h-8 rounded-full flex items-center justify-center transition duration-200">
+                                    <i class="far fa-thumbs-up text-xs"></i>
+                                </button>
+                            </div>
+                            <button onclick="event.stopPropagation(); openModal('${media.id}')" class="border border-gray-500 hover:border-white w-8 h-8 rounded-full flex items-center justify-center transition duration-200">
+                                <i class="fas fa-chevron-down text-xs"></i>
+                            </button>
+                        </div>
+                        <!-- Meta Info -->
+                        <div class="flex items-center space-x-2 text-[10px] font-bold mb-2">
+                            <span class="text-green-500">${media.match}</span>
+                            <span class="border border-gray-500 px-1 rounded text-[8px] text-gray-400">${media.rating}</span>
+                            <span class="text-gray-400">${media.duration}</span>
+                        </div>
+                        <!-- Genres -->
+                        <div class="flex flex-wrap gap-1">
+                            ${media.genres.map(g => `<span class="text-[9px] bg-white/10 px-1.5 py-0.5 rounded text-gray-300">${g}</span>`).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function scrollCarousel(id, direction) {
+            const container = document.getElementById(id);
+            const scrollAmount = container.clientWidth * 0.8;
+            if (direction === 'left') {
+                container.scrollBy({ left: -scrollAmount, behavior: 'smooth' });
+            } else {
+                container.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+            }
+        }
+
+        // ==========================================
+        // SEARCH FUNCTIONALITY
+        // ==========================================
+        function performSearch(query) {
+            searchResultsSection.classList.remove('hidden');
+            mainContent.classList.add('hidden');
+            searchQueryText.innerText = `"${query}"`;
+
+            const results = mediaData.filter(media => 
+                media.title.toLowerCase().includes(query) ||
+                media.genres.some(g => g.toLowerCase().includes(query)) ||
+                media.desc.toLowerCase().includes(query) ||
+                media.cast.toLowerCase().includes(query)
+            );
+
+            searchResultsGrid.innerHTML = '';
+            if (results.length > 0) {
+                searchNoResults.classList.add('hidden');
+                results.forEach(media => {
+                    searchResultsGrid.innerHTML += createCardHTML(media);
+                });
+            } else {
+                searchNoResults.classList.remove('hidden');
+            }
+        }
+
+        function clearSearch() {
+            searchResultsSection.classList.add('hidden');
+            mainContent.classList.remove('hidden');
+        }
+
+        // ==========================================
+        // MY LIST MANAGEMENT
+        // ==========================================
+        function toggleMyList(id) {
+            const index = myList.indexOf(id);
+            if (index === -1) {
+                myList.push(id);
+            } else {
+                myList.splice(index, 1);
+            }
+            localStorage.setItem('flixfusion_mylist', JSON.stringify(myList));
+            updateMyListBadge();
+            renderCarousels();
+            
+            // Update modal button if open
+            if (activeModalMedia && activeModalMedia.id === id) {
+                updateModalListButton();
+            }
+        }
+
+        function toggleMyListFromModal() {
+            if (activeModalMedia) {
+                toggleMyList(activeModalMedia.id);
+            }
+        }
+
+        function updateMyListBadge() {
+            if (myList.length > 0) {
+                mylistBadge.innerText = myList.length;
+                mylistBadge.classList.remove('hidden');
+            } else {
+                mylistBadge.classList.add('hidden');
+            }
+        }
+
+        function toggleLike(id, btn) {
+            const icon = btn.querySelector('i');
+            if (icon.classList.contains('far')) {
+                icon.className = 'fas fa-thumbs-up text-green-500 text-xs';
+            } else {
+                icon.className = 'far fa-thumbs-up text-xs';
+            }
+        }
+
+        function toggleModalLike() {
+            const icon = document.getElementById('modal-like-icon');
+            if (icon.classList.contains('far')) {
+                icon.className = 'fas fa-thumbs-up text-green-500';
+            } else {
+                icon.className = 'far fa-thumbs-up';
+            }
+        }
+
+        // ==========================================
+        // DETAIL MODAL / EXPANDED VIEW
+        // ==========================================
+        function openModal(id) {
+            const media = mediaData.find(m => m.id === id);
+            if (!media) return;
+
+            activeModalMedia = media;
+
+            // Populate Modal Elements
+            document.getElementById('modal-banner-img').src = media.backdrop;
+            document.getElementById('modal-title').innerText = media.title;
+            document.getElementById('modal-match').innerText = media.match;
+            document.getElementById('modal-year').innerText = media.year;
+            document.getElementById('modal-rating').innerText = media.rating;
+            document.getElementById('modal-duration').innerText = media.duration;
+            document.getElementById('modal-desc').innerText = media.desc;
+
+            // Sidebar Metadata
+            document.getElementById('modal-sidebar-cast').innerText = media.cast;
+            document.getElementById('modal-sidebar-genres').innerText = media.genres.join(', ');
+            document.getElementById('modal-sidebar-tags').innerText = media.tags.join(', ');
+
+            // About Tab Metadata
+            document.getElementById('modal-about-director').innerText = media.director;
+            document.getElementById('modal-about-cast').innerText = media.cast;
+            document.getElementById('modal-about-writer').innerText = media.writer;
+            document.getElementById('modal-about-genres').innerText = media.genres.join(', ');
+            document.getElementById('modal-about-rating').innerText = media.rating;
+
+            // Update My List Button State
+            updateModalListButton();
+
+            // Reset Like Button
+            document.getElementById('modal-like-icon').className = 'far fa-thumbs-up';
+
+            // Setup Episodes Tab
+            const seasonSelector = document.getElementById('season-selector');
+            const episodesList = document.getElementById('episodes-list');
+            const episodesCount = document.getElementById('episodes-count');
+            const tabEpisodesBtn = document.getElementById('tab-episodes-btn');
+
+            if (media.type === 'tv') {
+                tabEpisodesBtn.classList.remove('hidden');
+                document.getElementById('season-selector').parentElement.classList.remove('hidden');
+                episodesList.classList.remove('hidden');
+                
+                // Populate Season Selector
+                seasonSelector.innerHTML = '';
+                const seasons = [...new Set(media.episodes.map(ep => ep.season || 1))];
+                if (seasons.length === 0) seasons.push(1); // Fallback
+                
+                seasons.forEach(s => {
+                    seasonSelector.innerHTML += `<option value="${s}">Season ${s}</option>`;
+                });
+
+                renderEpisodes(media, 1);
+
+                seasonSelector.onchange = (e) => {
+                    renderEpisodes(media, parseInt(e.target.value));
+                };
+
+                switchModalTab('episodes');
+            } else {
+                tabEpisodesBtn.classList.add('hidden');
+                document.getElementById('season-selector').parentElement.classList.add('hidden');
+                episodesList.classList.add('hidden');
+                switchModalTab('similar');
+            }
+
+            // Setup Similar Tab
+            renderSimilar(media);
+
+            // Show Modal with Animation
+            const modal = document.getElementById('detail-modal');
+            const container = document.getElementById('modal-container');
+            
+            modal.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden'); // Prevent background scrolling
+            
+            setTimeout(() => {
+                container.classList.remove('scale-95', 'opacity-0');
+                container.classList.add('scale-100', 'opacity-100');
+            }, 50);
+        }
+
+        function closeModal() {
+            const modal = document.getElementById('detail-modal');
+            const container = document.getElementById('modal-container');
+            
+            container.classList.remove('scale-100', 'opacity-100');
+            container.classList.add('scale-95', 'opacity-0');
+            
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                document.body.classList.remove('overflow-hidden');
+                activeModalMedia = null;
+            }, 300);
+        }
+
+        function updateModalListButton() {
+            const btn = document.getElementById('modal-add-list-btn');
+            const icon = document.getElementById('modal-list-icon');
+            const isInList = myList.includes(activeModalMedia.id);
+
+            if (isInList) {
+                icon.className = 'fas fa-check text-green-500';
+                btn.title = 'Remove from My List';
+            } else {
+                icon.className = 'fas fa-plus';
+                btn.title = 'Add to My List';
+            }
+        }
+
+        function renderEpisodes(media, seasonNum) {
+            const episodesList = document.getElementById('episodes-list');
+            const episodesCount = document.getElementById('episodes-count');
+            episodesList.innerHTML = '';
+
+            // Filter episodes by season (mocking all as season 1 for simplicity if not specified)
+            const eps = media.episodes;
+            episodesCount.innerText = `${eps.length} Episodes`;
+
+            eps.forEach((ep, index) => {
+                episodesList.innerHTML += `
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center py-4 space-y-3 sm:space-y-0 sm:space-x-4 hover:bg-white/5 p-2 rounded transition duration-200 cursor-pointer" onclick="playVideo('${media.id}', ${index + 1})">
+                        <!-- Episode Number -->
+                        <span class="text-lg font-bold text-gray-500 w-6 text-center hidden sm:inline">${index + 1}</span>
+                        <!-- Thumbnail -->
+                        <div class="relative w-full sm:w-36 aspect-video rounded overflow-hidden flex-shrink-0 bg-netflixLightGray">
+                            <img src="${ep.thumb}" alt="${ep.title}" class="w-full h-full object-cover">
+                            <div class="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition duration-300">
+                                <i class="fas fa-play text-white text-lg"></i>
+                            </div>
+                        </div>
+                        <!-- Info -->
+                        <div class="flex-1">
+                            <div class="flex items-center justify-between mb-1">
+                                <h4 class="font-bold text-sm sm:text-base">${ep.title}</h4>
+                                <span class="text-xs text-gray-400 font-semibold">${ep.duration}</span>
+                            </div>
+                            <p class="text-xs text-gray-400 line-clamp-2 leading-relaxed">${ep.desc}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function renderSimilar(media) {
+            const container = document.getElementById('tab-similar');
+            container.innerHTML = '';
+
+            // Find other media of same type or genre
+            const similar = mediaData.filter(m => m.id !== media.id && (m.type === media.type || m.genres.some(g => media.genres.includes(g)))).slice(0, 6);
+
+            similar.forEach(m => {
+                container.innerHTML += `
+                    <div class="bg-netflixLightGray rounded overflow-hidden cursor-pointer hover:opacity-80 transition duration-200" onclick="openModal('${m.id}')">
+                        <div class="aspect-video relative">
+                            <img src="${m.backdrop}" alt="${m.title}" class="w-full h-full object-cover">
+                            <span class="absolute top-2 right-2 bg-black/60 text-[10px] font-bold px-1.5 py-0.5 rounded">${m.duration}</span>
+                        </div>
+                        <div class="p-3 space-y-2">
+                            <div class="flex items-center justify-between">
+                                <span class="text-green-500 text-xs font-bold">${m.match}</span>
+                                <span class="border border-gray-500 px-1 rounded text-[8px] text-gray-400">${m.rating}</span>
+                            </div>
+                            <h4 class="font-bold text-xs truncate">${m.title}</h4>
+                            <p class="text-[10px] text-gray-400 line-clamp-2 leading-relaxed">${m.desc}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function switchModalTab(tabName) {
+            const tabs = ['episodes', 'similar', 'about'];
+            tabs.forEach(t => {
+                const btn = document.getElementById(`tab-${t}-btn`);
+                const content = document.getElementById(`tab-${t}`);
+                if (btn && content) {
+                    if (t === tabName) {
+                        btn.classList.remove('border-transparent', 'text-gray-400');
+                        btn.classList.add('border-netflixRed', 'text-white');
+                        content.classList.remove('hidden');
+                    } else {
+                        btn.classList.remove('border-netflixRed', 'text-white');
+                        btn.classList.add('border-transparent', 'text-gray-400');
+                        content.classList.add('hidden');
+                    }
+                }
+            });
+        }
+
+        // ==========================================
+        // MOCK VIDEO PLAYER
+        // ==========================================
+        function playHeroVideo() {
+            playVideo('aetheria');
+        }
+
+        function playModalVideo() {
+            if (activeModalMedia) {
+                playVideo(activeModalMedia.id);
+            }
+        }
+
+        function playVideo(id, episodeNum = null) {
+            const media = mediaData.find(m => m.id === id);
+            if (!media) return;
+
+            // Close modal if open
+            closeModal();
+
+            const player = document.getElementById('video-player');
+            const playerTitle = document.getElementById('player-title');
+            
+            let titleText = `Playing: ${media.title}`;
+            if (episodeNum) {
+                titleText += ` - Episode ${episodeNum}`;
+            }
+            playerTitle.innerText = titleText;
+
+            player.classList.remove('hidden');
+            document.body.classList.add('overflow-hidden');
+
+            // Initialize Canvas Visualizer
+            initPlayerCanvas();
+
+            // Reset Player State
+            playerTime = 0;
+            isPlayerPlaying = true;
+            document.getElementById('player-play-icon').className = 'fas fa-pause';
+            updatePlayerProgress();
+
+            // Start Mock Timer
+            if (playerInterval) clearInterval(playerInterval);
+            playerInterval = setInterval(() => {
+                if (isPlayerPlaying) {
+                    playerTime += parseFloat(document.getElementById('player-speed').value);
+                    if (playerTime >= playerDuration) {
+                        playerTime = playerDuration;
+                        togglePlayerPlay();
+                    }
+                    updatePlayerProgress();
+                }
+            }, 1000);
+        }
+
+        function closeVideoPlayer() {
+            const player = document.getElementById('video-player');
+            player.classList.add('hidden');
+            document.body.classList.remove('overflow-hidden');
+            
+            if (playerInterval) {
+                clearInterval(playerInterval);
+                playerInterval = null;
+            }
+            isPlayerPlaying = false;
+            
+            // Stop canvas animation
+            if (canvasAnimFrame) {
+                cancelAnimationFrame(canvasAnimFrame);
+            }
+        }
+
+        function togglePlayerPlay() {
+            isPlayerPlaying = !isPlayerPlaying;
+            const icon = document.getElementById('player-play-icon');
+            const overlay = document.getElementById('player-overlay-play');
+
+            if (isPlayerPlaying) {
+                icon.className = 'fas fa-pause';
+                overlay.innerHTML = '<i class="fas fa-play text-3xl text-white ml-1"></i>';
+            } else {
+                icon.className = 'fas fa-play ml-0.5';
+                overlay.innerHTML = '<i class="fas fa-pause text-3xl text-white"></i>';
+            }
+
+            // Flash overlay
+            overlay.classList.remove('opacity-0');
+            overlay.classList.add('opacity-100');
+            setTimeout(() => {
+                overlay.classList.remove('opacity-100');
+                overlay.classList.add('opacity-0');
+            }, 500);
+        }
+
+        function playerRewind() {
+            playerTime = Math.max(0, playerTime - 10);
+            updatePlayerProgress();
+        }
+
+        function playerForward() {
+            playerTime = Math.min(playerDuration, playerTime + 10);
+            updatePlayerProgress();
+        }
+
+        function togglePlayerMute() {
+            const icon = document.getElementById('player-volume-icon');
+            const slider = document.getElementById('player-volume-slider');
+            if (slider.value > 0) {
+                slider.dataset.prevValue = slider.value;
+                slider.value = 0;
+                icon.className = 'fas fa-volume-mute';
+            } else {
+                slider.value = slider.dataset.prevValue || 80;
+                icon.className = 'fas fa-volume-up';
+            }
+        }
+
+        function updatePlayerProgress() {
+            const progressBar = document.getElementById('player-progress-bar');
+            const progressHandle = document.getElementById('player-progress-handle');
+            const timeCurrent = document.getElementById('player-time-current');
+            const timeTotal = document.getElementById('player-time-total');
+
+            const pct = (playerTime / playerDuration) * 100;
+            progressBar.style.width = `${pct}%`;
+            progressHandle.style.left = `${pct}%`;
+
+            timeCurrent.innerText = formatTime(playerTime);
+            timeTotal.innerText = formatTime(playerDuration);
+        }
+
+        function formatTime(seconds) {
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        function togglePlayerFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log(`Error attempting to enable full-screen mode: ${err.message}`);
+                });
+            } else {
+                document.exitFullscreen();
+            }
+        }
+
+        // Progress Bar Click to Seek
+        document.getElementById('player-progress-container').addEventListener('click', (e) => {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const clickX = e.clientX - rect.left;
+            const width = rect.width;
+            const pct = clickX / width;
+            playerTime = pct * playerDuration;
+            updatePlayerProgress();
+        });
+
+        // Volume Slider Event
+        document.getElementById('player-volume-slider').addEventListener('input', (e) => {
+            const val = e.target.value;
+            const icon = document.getElementById('player-volume-icon');
+            if (val == 0) {
+                icon.className = 'fas fa-volume-mute';
+            } else if (val < 50) {
+                icon.className = 'fas fa-volume-down';
+            } else {
+                icon.className = 'fas fa-volume-up';
+            }
+        });
+
+        // ==========================================
+        // CANVAS ANIMATED VISUALIZER (MOCK VIDEO)
+        // ==========================================
+        let canvasAnimFrame = null;
+        function initPlayerCanvas() {
+            const canvas = document.getElementById('player-canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            window.addEventListener('resize', () => {
+                canvas.width = window.innerWidth;
+                canvas.height = window.innerHeight;
+            });
+
+            // Particle system for cinematic abstract background
+            const particles = [];
+            const particleCount = 100;
+
+            for (let i = 0; i < particleCount; i++) {
+                particles.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    radius: Math.random() * 3 + 1,
+                    color: i % 10 === 0 ? 'rgba(229, 9, 20, 0.6)' : 'rgba(255, 255, 255, 0.3)', // Red and white particles
+                    speedX: Math.random() * 0.5 - 0.25,
+                    speedY: Math.random() * 0.5 - 0.25,
+                    pulse: Math.random() * 0.05
+                });
+            }
+
+            // Nebula clouds
+            const clouds = [
+                { x: canvas.width * 0.3, y: canvas.height * 0.4, r: 300, color: 'rgba(229, 9, 20, 0.15)', dx: 0.1, dy: 0.05 },
+                { x: canvas.width * 0.7, y: canvas.height * 0.6, r: 400, color: 'rgba(124, 58, 237, 0.1)', dx: -0.08, dy: -0.04 },
+                { x: canvas.width * 0.5, y: canvas.height * 0.5, r: 250, color: 'rgba(59, 130, 246, 0.08)', dx: 0.05, dy: -0.06 }
+            ];
+
+            function animate() {
+                if (!isPlayerPlaying) {
+                    canvasAnimFrame = requestAnimationFrame(animate);
+                    return;
+                }
+
+                // Clear with slight opacity for motion blur
+                ctx.fillStyle = 'rgba(20, 20, 20, 0.1)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                // Draw Nebula Clouds
+                clouds.forEach(c => {
+                    c.x += c.dx;
+                    c.y += c.dy;
+
+                    // Bounce off edges
+                    if (c.x - c.r < 0 || c.x + c.r > canvas.width) c.dx *= -1;
+                    if (c.y - c.r < 0 || c.y + c.r > canvas.height) c.dy *= -1;
+
+                    const gradient = ctx.createRadialGradient(c.x, c.y, 0, c.x, c.y, c.r);
+                    gradient.addColorStop(0, c.color);
+                    gradient.addColorStop(1, 'rgba(20, 20, 20, 0)');
+                    ctx.fillStyle = gradient;
+                    ctx.beginPath();
+                    ctx.arc(c.x, c.y, c.r, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // Draw Particles
+                particles.forEach(p => {
+                    p.x += p.speedX;
+                    p.y += p.speedY;
+
+                    // Wrap around edges
+                    if (p.x < 0) p.x = canvas.width;
+                    if (p.x > canvas.width) p.x = 0;
+                    if (p.y < 0) p.y = canvas.height;
+                    if (p.y > canvas.height) p.y = 0;
+
+                    // Pulse radius
+                    p.radius += p.pulse;
+                    if (p.radius > 4 || p.radius < 1) p.pulse *= -1;
+
+                    ctx.fillStyle = p.color;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fill();
+                });
+
+                // Draw a central glowing cinematic flare
+                const time = Date.now() * 0.001;
+                const flareX = canvas.width / 2 + Math.sin(time) * 50;
+                const flareY = canvas.height / 2 + Math.cos(time * 0.8) * 30;
+                const flareGrad = ctx.createRadialGradient(flareX, flareY, 0, flareX, flareY, 150 + Math.sin(time * 2) * 20);
+                flareGrad.addColorStop(0, 'rgba(229, 9, 20, 0.25)');
+                flareGrad.addColorStop(0.5, 'rgba(229, 9, 20, 0.05)');
+                flareGrad.addColorStop(1, 'rgba(20, 20, 20, 0)');
+                ctx.fillStyle = flareGrad;
+                ctx.beginPath();
+                ctx.arc(flareX, flareY, 200, 0, Math.PI * 2);
+                ctx.fill();
+
+                // Draw some cinematic text overlay in the center
+                ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+                ctx.font = 'bold 4vw Inter';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('FLIXFUSION ORIGINAL', canvas.width / 2, canvas.height / 2);
+
+                canvasAnimFrame = requestAnimationFrame(animate);
+            }
+
+            animate();
+        }
+    </script>
+</body>
+</html>
